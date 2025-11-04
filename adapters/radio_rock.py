@@ -16,7 +16,7 @@ ZONE = ZoneInfo("Europe/Bratislava")
 
 def log(song_session_id, msg):
     now = datetime.datetime.now(ZONE).strftime('%d.%m.%Y %H:%M:%S')
-    print(f"[{now}] [{RADIO_NAME} {song_session_id}] {msg}")
+    print(f"[{now}] [{RADIO_NAME}{' ' * (8 - len(RADIO_NAME))} {song_session_id}] {msg}")
 
 class RadioRockWorker:
     def __init__(self, song_interval, listeners_interval, songs_cache, listeners_cache):
