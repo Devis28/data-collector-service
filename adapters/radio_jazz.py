@@ -14,7 +14,7 @@ ZONE = ZoneInfo("Europe/Bratislava")
 
 def log(song_session_id, msg):
     now = datetime.datetime.now(ZONE).strftime('%d.%m.%Y %H:%M:%S')
-    print(f"[{now}] [{RADIO_NAME} {song_session_id}] {msg}")
+    print(f"[{now}] [{RADIO_NAME}{' ' * (8 - len(RADIO_NAME))} {song_session_id}] {msg}")
 
 class RadioJazzWorker:
     def __init__(self, song_interval, listeners_cache, songs_cache):
@@ -79,6 +79,7 @@ app = Flask(__name__)
 worker_instance = None
 
 @app.route('/callback', methods=['POST'])
+@app.route('/callback-jazz', methods=['POST'])
 def callback():
     now = datetime.datetime.now(ZONE).isoformat()
     data = request.get_json(force=True)

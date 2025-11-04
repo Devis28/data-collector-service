@@ -6,6 +6,7 @@ from writer import upload_json_to_r2
 from adapters.radio_rock import RadioRockWorker
 from adapters.radio_funradio import RadioFunradioWorker
 from adapters.radio_jazz import start_worker as start_jazz_worker
+from adapters.radio_beta import RadioBetaWorker
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
@@ -34,13 +35,22 @@ RADIO_WORKERS = {
         "starter": None,
     },
     "jazz": {
-        "worker_class": None,  # Špeciálny štart cez funkciu
+        "worker_class": None,
         "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
         "upload_interval": UPLOAD_INTERVAL,
         "song_cache": [],
         "listeners_cache": [],
         "radio_name": "JAZZ",
         "starter": start_jazz_worker
+    },
+    "beta": {
+        "worker_class": RadioBetaWorker,
+        "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+        "upload_interval": UPLOAD_INTERVAL,
+        "song_cache": [],
+        "listeners_cache": [],
+        "radio_name": "BETA",
+        "starter": None,
     }
 }
 
