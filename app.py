@@ -8,6 +8,7 @@ from adapters.radio_funradio import RadioFunradioWorker
 from adapters.radio_jazz import start_worker as start_jazz_worker
 from adapters.radio_beta import RadioBetaWorker
 from adapters.radio_expres import start_worker as start_expres_worker
+from adapters.radio_melody import RadioMelodyWorker
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
@@ -61,6 +62,15 @@ RADIO_WORKERS = {
         "listeners_cache": [],
         "radio_name": "EXPRES",
         "starter": start_expres_worker,
+    },
+    "melody": {
+        "worker_class": RadioMelodyWorker,
+        "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+        "upload_interval": UPLOAD_INTERVAL,
+        "song_cache": [],
+        "listeners_cache": [],
+        "radio_name": "MELODY",
+        "starter": None
     }
 }
 
