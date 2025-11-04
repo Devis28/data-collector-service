@@ -59,7 +59,7 @@ class RadioRockWorker:
                     if is_valid and (self.last_song is None or song_info["musicAuthor"] != self.last_song["musicAuthor"] or song_info["musicTitle"] != self.last_song["musicTitle"]):
                         self.current_song_id = str(uuid.uuid4())
                         self.last_song = song_info.copy()
-                        song_str = f"{song_info.get('musicTitle', 'N/A')} | {song_info.get('musicAuthor', 'N/A')}"
+                        song_str = f"Nový song: {song_info.get('musicTitle', 'N/A')} | {song_info.get('musicAuthor', 'N/A')}"
                         log(self.current_song_id, song_str)
                     song_entry = {
                         **song_info,
