@@ -95,7 +95,7 @@ def webhook():
     return {"status": "ok"}
 
 def start_flask():
-    app.run(host="0.0.0.0", port=8001)
+    app.run(host="0.0.0.0", port=8000)
 
 def start_worker(listeners_interval, listeners_cache, songs_cache):
     global worker_instance
