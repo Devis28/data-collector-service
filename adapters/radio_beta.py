@@ -128,7 +128,7 @@ class RadioBetaWorker:
                         await asyncio.sleep(self.listeners_interval)
             except Exception as e:
                 log(self.current_song_id, f"WebSocket chyba: {e}")
-                time.sleep(50)
+                time.sleep(80)
                 await asyncio.sleep(self.listeners_interval)
 
     def start(self):
