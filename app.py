@@ -1,59 +1,80 @@
-from adapters.radio_rock import RadioRockWorker
 import threading
 import time
 import os
 import json
 from writer import upload_json_to_r2
+from adapters.radio_rock import RadioRockWorker
+# from adapters.radio_fun import RadioFunWorker # in the future
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
 UPLOAD_INTERVAL = 600  # 10 minút
 
 DATA_DIR = "data"
-os.makedirs(DATA_DIR + "/songs", exist_ok=True)
-os.makedirs(DATA_DIR + "/listeners", exist_ok=True)
+os.makedirs(DATA_DIR, exist_ok=True)
 
-songs_cache = []
-listeners_cache = []
+# Worker štruktúra: názov -> všetko potrebné pre worker a upload
+RADIO_WORKERS = {
+    "rock": {
+        "worker_class": RadioRockWorker,
+        "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+        "upload_interval": UPLOAD_INTERVAL,
+        "song_cache": [],
+        "listeners_cache": [],
+        "radio_name": "ROCK",
+    }
+    # "fun": {
+    #     "worker_class": RadioFunWorker,
+    #     "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+    #     "upload_interval": UPLOAD_INTERVAL,
+    #     "song_cache": [],
+    #     "listeners_cache": [],
+    #     "radio_name": "FUN",
+    # }
+}
 
-def save_entries(entries, typ):
+def save_entries(entries, typ, radio):
     dt = time.strftime("%d-%m-%Y")
     tm = time.strftime("%H-%M-%S")
-    radio = "ROCK"
-    folder = f"{DATA_DIR}/{typ}/{dt}"
+    folder = f"{DATA_DIR}/{radio}/{typ}/{dt}"
     os.makedirs(folder, exist_ok=True)
     local_file_path = f"{folder}/{tm}.json"
     with open(local_file_path, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
     return local_file_path, dt, tm
 
-def upload_worker():
-    time.sleep(UPLOAD_INTERVAL)
+def upload_worker(radio_key, radio_dict):
+    time.sleep(radio_dict["upload_interval"])
     while True:
-        songs_to_upload = songs_cache.copy()
-        listeners_to_upload = listeners_cache.copy()
-        songs_cache.clear()
-        listeners_cache.clear()
+        songs_to_upload = radio_dict["song_cache"].copy()
+        listeners_to_upload = radio_dict["listeners_cache"].copy()
+        radio_dict["song_cache"].clear()
+        radio_dict["listeners_cache"].clear()
+        radio_name = radio_dict["radio_name"]
         if songs_to_upload:
-            local_file, dt, tm = save_entries(songs_to_upload, "song")
-            r2_key = f"bronze/ROCK/song/{dt}/{tm}.json"
+            local_file, dt, tm = save_entries(songs_to_upload, "song", radio_name)
+            r2_key = f"bronze/{radio_name}/song/{dt}/{tm}.json"
             upload_json_to_r2(local_file, r2_key)
         if listeners_to_upload:
-            local_file, dt, tm = save_entries(listeners_to_upload, "listeners")
-            r2_key = f"bronze/ROCK/listeners/{dt}/{tm}.json"
+            local_file, dt, tm = save_entries(listeners_to_upload, "listeners", radio_name)
+            r2_key = f"bronze/{radio_name}/listeners/{dt}/{tm}.json"
             upload_json_to_r2(local_file, r2_key)
-        print(f"[{time.strftime('%d.%m.%Y %H:%M:%S')}] [ROCK ---] Dáta boli odoslané do Cloudflare R2.")
-        time.sleep(UPLOAD_INTERVAL)
+        print(f"[{time.strftime('%d.%m.%Y %H:%M:%S')}] [{radio_name} ---] Dáta boli odoslané do Cloudflare R2.")
+        time.sleep(radio_dict["upload_interval"])
 
-def main():
-    worker = RadioRockWorker(
-        SONG_INTERVAL,
-        LISTENERS_INTERVAL,
-        songs_cache,
-        listeners_cache
+def start_radio_worker(radio_key, radio_dict):
+    worker = radio_dict["worker_class"](
+        radio_dict["intervals"][0],
+        radio_dict["intervals"][1],
+        radio_dict["song_cache"],
+        radio_dict["listeners_cache"]
     )
     worker.start()
-    threading.Thread(target=upload_worker, daemon=True).start()
+    threading.Thread(target=upload_worker, args=(radio_key, radio_dict), daemon=True).start()
+
+def main():
+    for radio_key, radio_dict in RADIO_WORKERS.items():
+        start_radio_worker(radio_key, radio_dict)
     while True:
         time.sleep(60)
 
