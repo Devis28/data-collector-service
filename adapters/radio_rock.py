@@ -118,4 +118,12 @@ class RadioRockWorker:
     def start(self):
         threading.Thread(target=self.poll_song, daemon=True).start()
         threading.Thread(target=self.upload_periodically, daemon=True).start()
-        asyncio.get_event_loop().create_task(self.listen_listeners())
+
+        # Spusti WebSocket listeners vo vlastnom asyncio loop
+        def run_ws():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(self.listen_listeners())
+
+        threading.Thread(target=run_ws, daemon=True).start()
+
