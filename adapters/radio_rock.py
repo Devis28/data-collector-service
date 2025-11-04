@@ -6,6 +6,7 @@ import json
 import uuid
 import asyncio
 import websockets
+import copy
 from zoneinfo import ZoneInfo
 
 SONG_URL = "https://rock-server.fly.dev/pull/playing"
@@ -57,13 +58,11 @@ class RadioRockWorker:
                         self.last_song = song_info.copy()
                         song_str = f"Nový song: {song_info.get('musicTitle', 'N/A')} | {song_info.get('musicAuthor', 'N/A')} | {song_info.get('startTime', 'N/A')}"
                         log(self.current_song_id, song_str)
-                        song_entry = {
-                            **song_info,
-                            "recorded_at": now,
-                            "raw_valid": bool(is_valid),
-                            "song_session_id": self.current_song_id if self.current_song_id else "",
-                        }
-                        self.songs_cache.append(song_entry)  # Pridaj iba nový song
+                        raw_entry = copy.deepcopy(data)
+                        raw_entry["recorded_at"] = now
+                        raw_entry["raw_valid"] = bool(is_valid)
+                        raw_entry["song_session_id"] = self.current_song_id if self.current_song_id else ""
+                        self.songs_cache.append(raw_entry)
                 else:
                     log(self.current_song_id, f"Chyba HTTP song: {resp.status_code}")
             except Exception as e:
@@ -71,7 +70,6 @@ class RadioRockWorker:
             time.sleep(self.song_interval)
 
     async def listen_listeners(self):
-        # Zachytávaj listeners každých listeners_interval sekúnd
         while self.running:
             try:
                 async with websockets.connect(LISTENERS_WS) as ws:
@@ -81,12 +79,10 @@ class RadioRockWorker:
                         try:
                             listeners_data = json.loads(msg)
                             valid = self.validate_listeners(listeners_data)
-                            listeners_entry = {
-                                "listeners": listeners_data.get("listeners"),
-                                "recorded_at": now,
-                                "raw_valid": bool(valid),
-                                "song_session_id": self.current_song_id if self.current_song_id else ""
-                            }
+                            listeners_entry = copy.deepcopy(listeners_data)
+                            listeners_entry["recorded_at"] = now
+                            listeners_entry["raw_valid"] = bool(valid)
+                            listeners_entry["song_session_id"] = self.current_song_id if self.current_song_id else ""
                             listeners_str = f"Počet poslucháčov: {listeners_entry['listeners']}"
                             log(listeners_entry['song_session_id'], listeners_str)
                             self.listeners_cache.append(listeners_entry)
@@ -99,7 +95,6 @@ class RadioRockWorker:
 
     def start(self):
         threading.Thread(target=self.poll_song, daemon=True).start()
-
         def run_ws():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)

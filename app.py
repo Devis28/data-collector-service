@@ -6,8 +6,8 @@ import json
 from writer import upload_json_to_r2
 
 SONG_INTERVAL = 30
-LISTENERS_INTERVAL = 30     # <-- tu nastav správne!
-UPLOAD_INTERVAL = 600       # 10 minút
+LISTENERS_INTERVAL = 30
+UPLOAD_INTERVAL = 600  # 10 minút
 
 DATA_DIR = "data"
 os.makedirs(DATA_DIR + "/songs", exist_ok=True)
