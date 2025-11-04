@@ -7,6 +7,7 @@ from adapters.radio_rock import RadioRockWorker
 from adapters.radio_funradio import RadioFunradioWorker
 from adapters.radio_jazz import start_worker as start_jazz_worker
 from adapters.radio_beta import RadioBetaWorker
+from adapters.radio_expres import start_worker as start_expres_worker
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
@@ -51,6 +52,15 @@ RADIO_WORKERS = {
         "listeners_cache": [],
         "radio_name": "BETA",
         "starter": None,
+    },
+    "expres": {
+        "worker_class": None,
+        "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+        "upload_interval": UPLOAD_INTERVAL,
+        "song_cache": [],
+        "listeners_cache": [],
+        "radio_name": "EXPRES",
+        "starter": start_expres_worker,
     }
 }
 
@@ -85,7 +95,7 @@ def upload_worker(radio_key, radio_dict):
 
 def start_radio_worker(radio_key, radio_dict):
     if radio_dict["starter"]:
-        radio_dict["starter"](radio_dict["intervals"][0], radio_dict["listeners_cache"], radio_dict["song_cache"])
+        radio_dict["starter"](radio_dict["intervals"][1], radio_dict["listeners_cache"], radio_dict["song_cache"])
     else:
         worker = radio_dict["worker_class"](
             radio_dict["intervals"][0],
