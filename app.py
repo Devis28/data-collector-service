@@ -12,7 +12,7 @@ from adapters.radio_melody import RadioMelodyWorker
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
-UPLOAD_INTERVAL = 600  # 10 minút
+UPLOAD_INTERVAL = 7200  # 2h
 
 DATA_DIR = "data"
 os.makedirs(DATA_DIR, exist_ok=True)
