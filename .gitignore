@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtuálne prostredie
+.venv/
+venv/
+env/
+
+# PyCharm
+.idea/
+*.iml
+
+# Logs a dáta
+*.log
+*.pot
+*.mo
+*.sqlite3
+
+# Lokálne konfiguračné súbory
+.env
+.env.*
+*.cfg
+*.ini
+
+# Cache a build vygenerované súbory
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# OS špecifické
+.DS_Store
+Thumbs.db
+
+# Railway a Docker
+.Dockerfile
+.start.sh
+
+# download records
+downloads_records/
