@@ -51,19 +51,19 @@ class RadioRockWorker:
                     data = resp.json()
                     is_valid = self.validate_song(data)
                     song_info = data["song"] if is_valid else data.get("song", {})
-                    # Nová skladba podľa názvu/autora
+                    # Nová skladba podľa autora a názvu
                     if is_valid and (self.last_song is None or song_info["musicAuthor"] != self.last_song["musicAuthor"] or song_info["musicTitle"] != self.last_song["musicTitle"]):
                         self.current_song_id = str(uuid.uuid4())
                         self.last_song = song_info.copy()
                         song_str = f"Nový song: {song_info.get('musicTitle', 'N/A')} | {song_info.get('musicAuthor', 'N/A')} | {song_info.get('startTime', 'N/A')}"
                         log(self.current_song_id, song_str)
-                    song_entry = {
-                        **song_info,
-                        "recorded_at": now,
-                        "raw_valid": bool(is_valid),
-                        "song_session_id": self.current_song_id if self.current_song_id else "",
-                    }
-                    self.songs_cache.append(song_entry)
+                        song_entry = {
+                            **song_info,
+                            "recorded_at": now,
+                            "raw_valid": bool(is_valid),
+                            "song_session_id": self.current_song_id if self.current_song_id else "",
+                        }
+                        self.songs_cache.append(song_entry)  # Pridaj iba nový song
                 else:
                     log(self.current_song_id, f"Chyba HTTP song: {resp.status_code}")
             except Exception as e:
@@ -71,6 +71,7 @@ class RadioRockWorker:
             time.sleep(self.song_interval)
 
     async def listen_listeners(self):
+        # Zachytávaj listeners každých listeners_interval sekúnd
         while self.running:
             try:
                 async with websockets.connect(LISTENERS_WS) as ws:
@@ -91,9 +92,10 @@ class RadioRockWorker:
                             self.listeners_cache.append(listeners_entry)
                         except Exception as ex:
                             log(self.current_song_id, f"Chyba parsovania listeners: {ex}")
+                        await asyncio.sleep(self.listeners_interval)
             except Exception as e:
                 log(self.current_song_id, f"WebSocket chyba: {e}")
-            await asyncio.sleep(self.listeners_interval)
+                await asyncio.sleep(self.listeners_interval)
 
     def start(self):
         threading.Thread(target=self.poll_song, daemon=True).start()

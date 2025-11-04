@@ -6,14 +6,13 @@ import json
 from writer import upload_json_to_r2
 
 SONG_INTERVAL = 30
-LISTENERS_INTERVAL = 10
-UPLOAD_INTERVAL = 600  # 10 minút
+LISTENERS_INTERVAL = 30     # <-- tu nastav správne!
+UPLOAD_INTERVAL = 600       # 10 minút
 
 DATA_DIR = "data"
 os.makedirs(DATA_DIR + "/songs", exist_ok=True)
 os.makedirs(DATA_DIR + "/listeners", exist_ok=True)
 
-# Spoločné cache pre worker aj uploader
 songs_cache = []
 listeners_cache = []
 
@@ -29,10 +28,8 @@ def save_entries(entries, typ):
     return local_file_path, dt, tm
 
 def upload_worker():
-    # Prvý upload až po prvom intervale
     time.sleep(UPLOAD_INTERVAL)
     while True:
-        # Vytvor si snapshot cache, aby sa počas uploadu nezmenil obsah
         songs_to_upload = songs_cache.copy()
         listeners_to_upload = listeners_cache.copy()
         songs_cache.clear()
