@@ -5,7 +5,6 @@ import os
 import json
 from writer import upload_json_to_r2
 
-# Intervaly v sekundách (pre jednoduchosť môžeš zmeniť)
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
 UPLOAD_INTERVAL = 600  # 10 minút
@@ -31,7 +30,6 @@ def listeners_writer(entry):
     save_entry(entry, "listeners")
 
 def upload_trigger(entries, typ):
-    # Zoskupí aktuálne zaznamenané záznamy do jedného JSON file podľa Cloudflare štruktúry
     dt = time.strftime("%d-%m-%Y")
     tm = time.strftime("%H-%M-%S")
     radio = "ROCK"
@@ -57,7 +55,6 @@ def start_radio_worker():
 def main():
     threads = []
     threads.append(start_radio_worker())
-    # Priprav si do budúcnosti ďalšie rádiá: append(start_radio_worker(pre relevant adapter))
     while True:
         time.sleep(60)
 
