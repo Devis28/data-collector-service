@@ -4,7 +4,7 @@ import os
 import json
 from writer import upload_json_to_r2
 from adapters.radio_rock import RadioRockWorker
-# from adapters.radio_fun import RadioFunWorker # in the future
+from adapters.radio_funradio import RadioFunradioWorker
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
@@ -13,7 +13,6 @@ UPLOAD_INTERVAL = 600  # 10 minút
 DATA_DIR = "data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# Worker štruktúra: názov -> všetko potrebné pre worker a upload
 RADIO_WORKERS = {
     "rock": {
         "worker_class": RadioRockWorker,
@@ -22,15 +21,15 @@ RADIO_WORKERS = {
         "song_cache": [],
         "listeners_cache": [],
         "radio_name": "ROCK",
+    },
+    "funradio": {
+        "worker_class": RadioFunradioWorker,
+        "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+        "upload_interval": UPLOAD_INTERVAL,
+        "song_cache": [],
+        "listeners_cache": [],
+        "radio_name": "FUNRADIO",
     }
-    # "fun": {
-    #     "worker_class": RadioFunWorker,
-    #     "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
-    #     "upload_interval": UPLOAD_INTERVAL,
-    #     "song_cache": [],
-    #     "listeners_cache": [],
-    #     "radio_name": "FUN",
-    # }
 }
 
 def save_entries(entries, typ, radio):
