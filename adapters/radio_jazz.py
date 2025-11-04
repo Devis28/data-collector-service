@@ -79,6 +79,8 @@ app = Flask(__name__)
 worker_instance = None
 
 @app.route('/callback', methods=['POST'])
+@app.route('/callback-jazz', methods=['POST'])
+
 def callback():
     now = datetime.datetime.now(ZONE).isoformat()
     data = request.get_json(force=True)
