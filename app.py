@@ -5,6 +5,7 @@ import json
 from writer import upload_json_to_r2
 from adapters.radio_rock import RadioRockWorker
 from adapters.radio_funradio import RadioFunradioWorker
+from adapters.radio_jazz import start_worker as start_jazz_worker
 
 SONG_INTERVAL = 30
 LISTENERS_INTERVAL = 30
@@ -21,6 +22,7 @@ RADIO_WORKERS = {
         "song_cache": [],
         "listeners_cache": [],
         "radio_name": "ROCK",
+        "starter": None,
     },
     "funradio": {
         "worker_class": RadioFunradioWorker,
@@ -29,6 +31,16 @@ RADIO_WORKERS = {
         "song_cache": [],
         "listeners_cache": [],
         "radio_name": "FUNRADIO",
+        "starter": None,
+    },
+    "jazz": {
+        "worker_class": None,  # Špeciálny štart cez funkciu
+        "intervals": (SONG_INTERVAL, LISTENERS_INTERVAL),
+        "upload_interval": UPLOAD_INTERVAL,
+        "song_cache": [],
+        "listeners_cache": [],
+        "radio_name": "JAZZ",
+        "starter": start_jazz_worker
     }
 }
 
@@ -62,13 +74,16 @@ def upload_worker(radio_key, radio_dict):
         time.sleep(radio_dict["upload_interval"])
 
 def start_radio_worker(radio_key, radio_dict):
-    worker = radio_dict["worker_class"](
-        radio_dict["intervals"][0],
-        radio_dict["intervals"][1],
-        radio_dict["song_cache"],
-        radio_dict["listeners_cache"]
-    )
-    worker.start()
+    if radio_dict["starter"]:
+        radio_dict["starter"](radio_dict["intervals"][0], radio_dict["listeners_cache"], radio_dict["song_cache"])
+    else:
+        worker = radio_dict["worker_class"](
+            radio_dict["intervals"][0],
+            radio_dict["intervals"][1],
+            radio_dict["song_cache"],
+            radio_dict["listeners_cache"]
+        )
+        worker.start()
     threading.Thread(target=upload_worker, args=(radio_key, radio_dict), daemon=True).start()
 
 def main():
