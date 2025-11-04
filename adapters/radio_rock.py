@@ -18,17 +18,13 @@ def log(song_session_id, msg):
     print(f"[{now}] [{RADIO_NAME} {song_session_id}] {msg}")
 
 class RadioRockWorker:
-    def __init__(self, song_interval, listeners_interval, upload_interval, song_writer, listeners_writer, upload_trigger):
+    def __init__(self, song_interval, listeners_interval, songs_cache, listeners_cache):
         self.song_interval = song_interval
         self.listeners_interval = listeners_interval
-        self.upload_interval = upload_interval
-        self.song_writer = song_writer
-        self.listeners_writer = listeners_writer
-        self.upload_trigger = upload_trigger
+        self.songs_cache = songs_cache
+        self.listeners_cache = listeners_cache
         self.current_song_id = None
         self.last_song = None
-        self.songs_cache = []
-        self.listeners_cache = []
         self.running = True
 
     def validate_song(self, data):
@@ -59,7 +55,7 @@ class RadioRockWorker:
                     if is_valid and (self.last_song is None or song_info["musicAuthor"] != self.last_song["musicAuthor"] or song_info["musicTitle"] != self.last_song["musicTitle"]):
                         self.current_song_id = str(uuid.uuid4())
                         self.last_song = song_info.copy()
-                        song_str = f"Nový song: {song_info.get('musicTitle', 'N/A')} | {song_info.get('musicAuthor', 'N/A')}"
+                        song_str = f"Nový song: {song_info.get('musicTitle', 'N/A')} | {song_info.get('musicAuthor', 'N/A')} | {song_info.get('startTime', 'N/A')}"
                         log(self.current_song_id, song_str)
                     song_entry = {
                         **song_info,
@@ -68,8 +64,6 @@ class RadioRockWorker:
                         "song_session_id": self.current_song_id if self.current_song_id else "",
                     }
                     self.songs_cache.append(song_entry)
-                    if self.song_writer:
-                        self.song_writer(song_entry)
                 else:
                     log(self.current_song_id, f"Chyba HTTP song: {resp.status_code}")
             except Exception as e:
@@ -95,35 +89,17 @@ class RadioRockWorker:
                             listeners_str = f"Počet poslucháčov: {listeners_entry['listeners']}"
                             log(listeners_entry['song_session_id'], listeners_str)
                             self.listeners_cache.append(listeners_entry)
-                            if self.listeners_writer:
-                                self.listeners_writer(listeners_entry)
                         except Exception as ex:
                             log(self.current_song_id, f"Chyba parsovania listeners: {ex}")
             except Exception as e:
                 log(self.current_song_id, f"WebSocket chyba: {e}")
             await asyncio.sleep(self.listeners_interval)
 
-    def upload_periodically(self):
-        while self.running:
-            try:
-                self.upload_trigger(self.songs_cache, "song")
-                self.upload_trigger(self.listeners_cache, "listeners")
-                self.songs_cache.clear()
-                self.listeners_cache.clear()
-                log(self.current_song_id, "Dáta boli odoslané do Cloudflare R2.")
-            except Exception as e:
-                log(self.current_song_id, f"Chyba pri uploade do Cloudflare: {e}")
-            time.sleep(self.upload_interval)
-
     def start(self):
         threading.Thread(target=self.poll_song, daemon=True).start()
-        threading.Thread(target=self.upload_periodically, daemon=True).start()
 
-        # Spusti WebSocket listeners vo vlastnom asyncio loop
         def run_ws():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             loop.run_until_complete(self.listen_listeners())
-
         threading.Thread(target=run_ws, daemon=True).start()
-

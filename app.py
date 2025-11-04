@@ -6,14 +6,18 @@ import json
 from writer import upload_json_to_r2
 
 SONG_INTERVAL = 30
-LISTENERS_INTERVAL = 30
+LISTENERS_INTERVAL = 10
 UPLOAD_INTERVAL = 600  # 10 minút
 
 DATA_DIR = "data"
 os.makedirs(DATA_DIR + "/songs", exist_ok=True)
 os.makedirs(DATA_DIR + "/listeners", exist_ok=True)
 
-def save_entry(entry, typ):
+# Spoločné cache pre worker aj uploader
+songs_cache = []
+listeners_cache = []
+
+def save_entries(entries, typ):
     dt = time.strftime("%d-%m-%Y")
     tm = time.strftime("%H-%M-%S")
     radio = "ROCK"
@@ -21,40 +25,38 @@ def save_entry(entry, typ):
     os.makedirs(folder, exist_ok=True)
     local_file_path = f"{folder}/{tm}.json"
     with open(local_file_path, "w", encoding="utf-8") as f:
-        json.dump(entry, f, ensure_ascii=False, indent=2)
-
-def song_writer(entry):
-    save_entry(entry, "song")
-
-def listeners_writer(entry):
-    save_entry(entry, "listeners")
-
-def upload_trigger(entries, typ):
-    dt = time.strftime("%d-%m-%Y")
-    tm = time.strftime("%H-%M-%S")
-    radio = "ROCK"
-    r2_key = f"bronze/{radio}/{typ}/{dt}/{tm}.json"
-    local_file_path = f"data/upload_{radio}_{typ}_{dt}_{tm}.json"
-    with open(local_file_path, "w", encoding="utf-8") as f:
         json.dump(entries, f, ensure_ascii=False, indent=2)
-    upload_json_to_r2(local_file_path, r2_key)
+    return local_file_path, dt, tm
 
-def start_radio_worker():
+def upload_worker():
+    # Prvý upload až po prvom intervale
+    time.sleep(UPLOAD_INTERVAL)
+    while True:
+        # Vytvor si snapshot cache, aby sa počas uploadu nezmenil obsah
+        songs_to_upload = songs_cache.copy()
+        listeners_to_upload = listeners_cache.copy()
+        songs_cache.clear()
+        listeners_cache.clear()
+        if songs_to_upload:
+            local_file, dt, tm = save_entries(songs_to_upload, "song")
+            r2_key = f"bronze/ROCK/song/{dt}/{tm}.json"
+            upload_json_to_r2(local_file, r2_key)
+        if listeners_to_upload:
+            local_file, dt, tm = save_entries(listeners_to_upload, "listeners")
+            r2_key = f"bronze/ROCK/listeners/{dt}/{tm}.json"
+            upload_json_to_r2(local_file, r2_key)
+        print(f"[{time.strftime('%d.%m.%Y %H:%M:%S')}] [ROCK ---] Dáta boli odoslané do Cloudflare R2.")
+        time.sleep(UPLOAD_INTERVAL)
+
+def main():
     worker = RadioRockWorker(
         SONG_INTERVAL,
         LISTENERS_INTERVAL,
-        UPLOAD_INTERVAL,
-        song_writer,
-        listeners_writer,
-        upload_trigger
+        songs_cache,
+        listeners_cache
     )
-    thread = threading.Thread(target=worker.start, daemon=True)
-    thread.start()
-    return thread
-
-def main():
-    threads = []
-    threads.append(start_radio_worker())
+    worker.start()
+    threading.Thread(target=upload_worker, daemon=True).start()
     while True:
         time.sleep(60)
 
