@@ -14,7 +14,7 @@ RADIO_NAME = "ROCK"
 ZONE = ZoneInfo("Europe/Bratislava")
 
 def log(song_session_id, msg):
-    now = datetime.datetime.now(ZONE).strftime('%d.%m.%Y %H.%M.%S')
+    now = datetime.datetime.now(ZONE).strftime('%d.%m.%Y %H:%M:%S')
     print(f"[{now}] [{RADIO_NAME} {song_session_id}] {msg}")
 
 class RadioRockWorker:
